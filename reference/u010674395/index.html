@@ -1,0 +1,128 @@
+    <!DOCTYPE html>  
+    <html lang="en">  
+        <head>  
+            <meta charset="UTF-8">  
+            <title>bianjiqi技术支持qq:41435301</title>  
+            <script src="./jquery.js"></script>  
+            <style>  
+                /**编辑器样式**/  
+                .textareatitle {  
+                    width: 844px;  
+                    height: 20px;  
+                    border: 1px solid #ccc;  
+                    border-bottom: none;  
+                }  
+                .textareatitle a,.textareatitle span {  
+                    padding-left: 5px;  
+                    padding-right: 5px;  
+                    font-weight: bold;  
+                    border-right: 1px solid #ccc;  
+                    cursor: pointer;  
+                    overflow: hidden;  
+                    display: block;  
+                    float: left;  
+                    color:#000000;  
+                }  
+      
+                .textareaedit{  
+                    width: 844px; height: 150px;border: 1px solid #ccc;resize:vertical;  
+                    overflow-y:auto;  
+                }  
+                .fileinput {  
+                    position: relative;  
+                    display: inline-block;  
+                    overflow: hidden;  
+                    cursor: pointer;  
+                }  
+                .fileinput input {  
+                    position: absolute;  
+                    font-size: 100px;  
+                    right: 0;  
+                    top: 0;  
+                    filter:alpha(opacity=0); opacity:0;  
+                    cursor: pointer;  
+                }  
+            </style>  
+      
+        </head>  
+        <body>  
+            <div style="width:850px;">  
+                <div class="textareatitle" id="editControls">  
+                    <a data-role='bold' href='javascript:void(0);'>B</a>  
+      
+                    <span class="fileinput">图片  
+                        <input type="file" multiple class="input-file pic-1" id="arrt_pic" name="images" onchange="uploadPic(this);">  
+                    </span>  
+                </div>  
+                <div class="textareaedit" style=" " contenteditable="true"></div>  
+            </div>  
+            <script src="./ajaxfileupload.js"></script>  
+            <script>  
+                            /********编辑器插入图片*********/  
+                            function uploadPic(input_file) {  
+                                var current_input = input_file;  
+                                var upload_id = $(input_file).attr('id');  
+                                $.ajaxFileUpload  
+                                        (  
+                                                {  
+                                                    url: 'upload.php', //用于文件上传的服务器端请求地址  
+                                                    secureuri: false, //是否需要安全协议，一般设置为false  
+                                                    fileElementId: upload_id, //文件上传域的ID  
+                                                    dataType: 'json', //返回值类型 一般设置为json  
+                                                    type: 'POST',  
+                                                    async: true,  
+                                                    success: function (data)  //服务器成功响应处理函数  
+                                                    {  
+                                                        if (data.status == 'Y') {  
+                                                            $(".textareaedit").append("<img src='./upload/" + data.msg + "'>");  
+                                                        } else {  
+                                                            alertLayer({text: '您上传的文件不符合要求'});  
+                                                        }  
+                                                    },  
+                                                    error: function (e) {  
+                                                        alertLayer({text: '您上传的文件不符合要求'});  
+                                                    },  
+                                                    complete: function () {  
+      
+                                                    }  
+                                                }  
+                                        );  
+      
+                            }  
+      
+                            /*******编辑器功能*******/  
+                            $('#editControls a').click(function (e) {  
+                                switch ($(this).data('role')) {  
+                                    case 'h1':  
+                                    case 'h2':  
+                                    case 'p':  
+                                        document.execCommand('formatBlock', false, '<' + $(this).data('role') + '>');  
+                                        break;  
+                                    default:  
+                                        document.execCommand($(this).data('role'), false, null);  
+                                        break;  
+                                }  
+                            })  
+            
+            
+        /*******图片上传，此处用了一个ajaxfileupload.js的插件。（图片上传给后台（如php文件），后台返回图片地址，前台再把该图片插入到该编辑器中）
+
+        该插件可能会报handleError相关错误，加上下面代码即可
+  
+        handleError: function (s, xhr, status, e) {  
+        // If a local callback was specified, fire it    
+        if (s.error) {  
+            s.error.call(s.context || s, xhr, status, e);  
+        }  
+  
+        // Fire the global callback    
+        if (s.global) {  
+            (s.context ? jQuery(s.context) : jQuery.event).trigger("ajaxError", [xhr, s, e]);  
+        }  
+    },       
+            
+         ******/   
+             
+            </script>  
+        </body>  
+    </html>  

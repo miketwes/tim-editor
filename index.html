@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <title></title>
+        <link rel="stylesheet" href="css/e.css" />
+
+    </head>
+
+    <body>
+
+        <div style="width:500px; margin-top:100px;margin-left:150px">
+            <div class="textareatitle" id="editControls" style="background:url(img/bg.gif">
+                <a data-role='removeformat' href='javascript:void(0);'>
+                    <div class="editor-icon editor-icon-removeformat"></div>
+                </a>
+
+                <a data-role='Bold' href='javascript:void(0);'>
+                    <div class="editor-icon editor-icon-bold"></div>
+                </a>
+
+                <a data-role='Italic' href='javascript:void(0);'>
+                    <div class="editor-icon editor-icon-italic"></div>
+                </a>
+
+                <a data-role='underline' href='javascript:void(0);'>
+                    <div class="editor-icon editor-icon-underline"></div>
+                </a>
+                <a>
+                    <div class="fore-wrapper"><img class="editor-icon" title=字体颜色 src="img/16.gif">
+                        <div class="fore-palette"></div>
+                    </div>
+                </a>
+
+                <a>
+                    <div class="back-wrapper"><img class="editor-icon" title=背景颜色 src="img/17.gif">
+                        <div class="back-palette"></div>
+                    </div>
+                </a>
+
+
+                <a data-role='font' href='javascript:void(0);'>
+                    <div class="editor-icon editor-icon-zt"></div>
+
+                </a>
+
+                <a data-role='fontsize' href='javascript:void(0);'>
+                    <div class="editor-icon editor-icon-zh"></div>
+                </a>
+
+
+                <a data-role='inp' href='javascript:void(0);'>
+                    <div class="editor-icon editor-icon-images"></div>
+                </a>
+
+                <span class="fileinput editor-icon  editor-icon-simpleupload" style="padding:0" title=上传图片> 
+          <input type="file" multiple class="input-file pic-1" id="demo1" name="file"/></span>
+
+                <a data-role='emoticons' href='javascript:void(0);'>
+                    <div class="editor-icon editor-icon-emoticons"></div>
+                </a>
+
+                <a data-role='source' href='javascript:void(0);' class="editor-icon editor-icon-source1" style="padding:0" onclick=ShowSource()></a>
+
+                <DIV id=dvPortrait1 style="DISPLAY: none; LEFT: 160px; WIDTH: 100px; POSITION: absolute; TOP: 0px; margin-top:25px;HEIGHT: 260px"></DIV>
+                <DIV id=dvPortrait2 style="DISPLAY: none; LEFT: 200px; WIDTH: 200px; POSITION: absolute; TOP: 0px; margin-top:25px;HEIGHT: 260px"></DIV>
+                <DIV id=dvPortrait style="DISPLAY: none;  margin-left:125px;right: 0px; WIDTH: 100px; POSITION: absolute; TOP: 50px; margin-top:25px;HEIGHT: 120px"> </DIV>
+
+            </div>
+            <div id="content" class="textareaedit" contenteditable="true" style="display:block"></div>
+            <div id="textDiv" style="display:none"> <textarea id="htmlText" class="textareaedit"></textarea> </div>
+
+        </div>
+
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script language=JAVASCRIPT src="js/portraitSelect.js"></script>
+        <script type="text/javascript" src="js/jquery.ajaxfileupload.js"></script>
+        <script src="js/e.js" type="text/javascript"></script>
+
+
+    </body>
+
+</html>

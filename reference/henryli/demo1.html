@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title></title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <style>
+            body{}
+            textarea{margin:50px;width:400px;height:200px;resize:none}
+            .editor-cont{position:relative;width:400px;height:auto;border:1px solid #ddd}
+            .editor-cont .editor-tool{width:100%;position:relative;border-bottom:1px solid #ddd;height:44px}
+            .editor-cont .editor-div{width:100%;height:200px;overflow-x:hidden;overflow-y:auto;line-height:1.5;font-size:12px;font-family:'arial';}
+            .editor-cont .editor-div p{font-size:12px;font-family:arial;line-height:1.5;padding:0;margin:5px 0;}
+            .editor-tool .editor-icon{float:left;overflow:hidden;float:left;color:#000;text-decoration:none}
+            .editor-icon{float:left;width:20px;height:20px;border-radius:2px;border:1px solid #eee;overflow:hidden;cursor:pointer;font-size:12px;margin-right:2px;background:url(images/icons.gif) no-repeat;overflow:hidden;text-indent:-999px;outline:none;
+                         -moz-user-select: none; 
+                         -webkit-user-select: none; 
+                         -ms-user-select: none; 
+                         user-select:none;
+            }
+            .editor-icon:hover{background-color:#fff5d4;border-color:#dcac6c}
+            .editor-icon-checked,.editor-icon-checked:hover{background-color:#FFE69F;border-color:#DCAC6C}
+            .editor-icon{}
+            .editor-icon-bold{}
+            .editor-icon-italic{background-position:-60px 0}
+            .editor-icon-underline{background-position:-140px 0}
+            .editor-icon-strikethrough{background-position:-120px 0}
+            .editor-icon-superscript{background-position:-600px 0}
+            .editor-icon-subscript{background-position:-620px 0}
+            .editor-icon-removeformat{background-position:-580px 0}
+            .editor-icon-forecolor{background-position:-720px 0}
+            .editor-icon-backcolor{background-position:-760px 0}
+            .editor-icon-fontname{background-position:-120px -40px;width:86px}
+            .editor-icon-fontsize{background-position:-220px -40px;width:86px}
+            .editor-icon-justifyleft{background-position:-460px 0}
+            .editor-icon-justifycenter{background-position:-420px 0}
+            .editor-icon-justifyright{background-position:-480px 0}
+            .editor-icon-justifyjustify{background-position:-440px 0}
+            .editor-icon-indent{background-position:-400px 0}
+            .editor-icon-outdent{background-position:-540px 0}
+            .editor-icon-createlink{background-position:-500px 0}
+            .editor-icon-unlink{background-position:-640px 0}
+            .editor-icon-insertorderedlist{background-position:-80px 0}
+            .editor-icon-insertunorderedlist{background-position:-20px 0}
+            .editor-icon-emoticons{background-position:-60px -20px}
+            .editor-icon-table{background-position:-580px -20px}
+            .editor-icon-images{background-position:-380px 0px}
+            
+            .editor-select{position:absolute;width:74px;border:1px solid #ddd;left:217px;top:20px;display:none}
+            .editor-select a{font-size:12px;top:50px;background-color:white;display:block;color:black;text-decoration:none}
+            .editor-select-fontsize{left:307px}
+        </style>
+    </head>
+    <body>
+        <textarea name="textarea1" id="J_textarea1">这个是div编辑器，换行tag设置为了br标签</textarea>
+        <textarea name="textarea2" id="J_textarea2"><p>这个是iframe编辑器，换行tag设置成了p标签</p></textarea>
+
+        <script>
+            var mEditor = (function(window) {
+                var document = window.document;
+                var emptyFn = function() {
+                };
+                var msie = !!document.all;
+                var arrProto = Array.prototype,
+                        core_slice = arrProto.slice,
+                        core_concat = arrProto.concat,
+                        hasOwn = Object.prototype.hasOwnProperty;
+
+                var guid = 0;
+                var Utils = {
+                    extend: function(destination, source) {// 目标对象将拥有源对象的所有属性和方法
+                        for (var property in source) {
+                            if (hasOwn.call(source, property))
+                                destination[property] = source[property];
+                        }
+                        return destination;
+                    },
+                    toArray: function(obj) {
+                        var _result = [];
+                        try {
+                            _result = core_slice.call(obj)
+                        } catch (e) {
+                            var i = 0;
+                            while (obj[i++]) {
+                                _result.push(obj[i]);
+                            }
+                        }
+                        return _result;
+                    },
+                    createElement: function(tagName, attr) {
+                        var _el = document.createElement(tagName);
+                        for (var k in attr) {
+                            if (k == 'class' || k == 'className') {
+                                _el.className = attr[k];
+                            } else if (k == 'html' || k == 'innerHTML') {
+                                _el.innerHTML = attr[k];
+                            } else {
+                                _el.setAttribute(k, attr[k]);
+                            }
+                        }
+                        return _el;
+                    },
+                    bind: (function() {
+                        return window.addEventListener ? function(el, type, fn) {
+                            el.addEventListener(type, fn);
+                        } : function(el, type, fn) {
+                            el.attachEvent('on' + type, fn);
+                        }
+                    })(),
+                    trim: function(str) {
+                        return str.trim ? str.trim() : str.replace(/(^\s*)|(\s*$)/g, "");
+                    },
+                    fixevent: function(e) {
+                        if (e) {
+                            return e;
+                        } else {
+                            e = window.event;
+                            e.preventDefault = function() {
+                                e.returnValue = false;
+                            }
+                            e.stopPropagation = function() {
+                                e.cancelBubble = true;
+                            }
+                        }
+                    }
+                };
+
+                var debug = window.console ? function() {
+                    var _arr = document.all ? [] : ['%cmEditor debug log:', 'font-weight:bold;color:#00c;'];
+                    try {
+                        window.console.log.apply(window.console, core_concat.apply(_arr, Utils.toArray(arguments)));
+                    } catch (e) {
+                    }
+                } : emptyFn;
+                var _richEditor = function(_opts) {
+
+                    var Options = {
+                        textarea: '',
+                        editorType: 'div', //为div模式或者iframe模式，默认为div。加载更快
+                        brTag: 'p', //换行模式，默认为p标签
+                        debug: false//默认debug为false
+                    };
+                    var tools = {
+                        bold: {title : '加粗',type : 'btn'},
+                        italic: {title : '斜体',type : 'btn'},
+                        underline: {title : '下划线',type : 'btn'},
+                        strikethrough:{title : '删除线',type : 'btn'},
+                        superscript: {title : '下标',type : 'btn'},
+                        subscript: {title : '上标',type : 'btn'},
+                        removeformat: {title : '删除格式',type : 'btn', queryState : false},
+                        forecolor: {title : '前景色',type : 'colorpicker'},
+                        backcolor: {title : '背景色',type : 'colorpicker'},
+                        fontname: {title : '字体',type : 'select',options : ['arial','宋体','微软雅黑'],queryCallback : function(){
+                            console.log(arguments)
+                        }},
+                        fontsize: {title : '字号',type : 'select',options : ['1','2','3'],queryCallback : function(){
+                            console.log(arguments)
+                        }},
+                        justifyleft: {title : '左对齐',type : 'btn'},
+                        justifycenter : {title : '居中对齐',type : 'btn'},
+                        justifyright: {title : '右对齐',type : 'btn'},
+                        indent: {title : '缩进',type : 'btn',queryState : false},
+                        outdent: {title : '反缩进',type : 'btn',queryState : false},
+                        createlink: {title : '插入链接',type : 'dialog'},
+                        unlink: {title : '取消链接',type : 'btn'},
+                        insertorderedlist: {title : '有序列表',type : 'btn'},
+                        insertunorderedlist: {title : '无序列表',type : 'btn'},
+                        emoticons: {title : '表情',type : 'emoticons', queryState : false},
+                        table: {title : '表格',type : 'table', queryState : false},
+                        images: {title : '图片',type : 'images', queryState : false}
+                    }
+                    var self = this;
+                    guid++;
+                    self._opts = Utils.extend(Options, _opts);
+                    self._console = self._opts.debug === true ? debug : emptyFn;
+                    
+                    self.getTools = function(){
+                        return tools;
+                    }
+                    var _steup = function() {
+                        self.editorCon = Utils.createElement('div', {
+                            'class': 'editor-cont'
+                        });
+                        self._opts.textarea.parentNode.insertBefore(self.editorCon, self._opts.textarea);
+
+                        var toolsHTML = '';
+                        var othHTML = '';
+                        for (var k in tools) {
+                            toolsHTML += '<a href="javascript:void(0)" onfocus="javascript:return false;" onmousedown="javascript:return false;" title="' + tools[k]['title'] + '" hidefocus="true" data-key="'+ k +'" unselectable="on" class="editor-icon editor-icon-' + k + '" '+(tools[k]['type'] === 'btn' ? ('data-command="' + k + '"') : '' )+' data-type="'+ tools[k]['type'] +'">' + k + '</a>'
+                            if(tools[k]['type'] == 'select'){
+                                othHTML += '<div data-type="'+ k +'" onmousedown="javascript:return false;" class="editor-select editor-select-'+ k +'">';
+                                var i = 0;
+                                while(tools[k]['options'][i]){
+                                    othHTML += '<a href="javascript:void(0)" onfocus="javascript:return false;" onmousedown="javascript:return false;" data-command="'+ k +'" data-command-value="'+ tools[k]['options'][i] +'">'+ tools[k]['options'][i] +'</a>'
+                                    i++;
+                                }
+                                othHTML+='</div>';
+                            }
+                        }
+                        self.editorTool = Utils.createElement('div', {
+                            'class': 'editor-tool',
+                            'html': toolsHTML + othHTML
+                        });
+                        self.editorCon.appendChild(self.editorTool);
+
+                        if (self._opts.editorType == 'div') {
+                            self.ifrWin = window;
+                            self.ifrDoc = document;
+                            self.editor = self.editor = Utils.createElement('div', {
+                                'class': 'editor-div',
+                                id: 'J_editor' + guid,
+                                contentEditable: 'true'
+                            });
+                            self.editorCon.appendChild(self.editor);
+                        } else {
+                            self.editor = Utils.createElement('iframe', {
+                                'class': 'editor-div',
+                                id: 'J_editor' + guid,
+                                frameBorder: 0,
+                                'scrolling': 'no'
+                            });
+                            self.editorCon.appendChild(self.editor);
+
+                            self.ifrWin = self.editor.contentWindow;
+                            self.ifrDoc = self.editor.contentDocument || self.ifrWin.document;
+                            self.ifrDoc.designMode = 'on';
+                            self.ifrDoc.open();
+                            self.ifrDoc.write('<html><head><style type="text/css">body{line-height:1.5;font-size:12px;font-family:"arial";margin:0;padding:0}p{margin:5px 0;padding:0}</style></head></html>');
+                            self.ifrDoc.close();
+                        }
+                        self._opts.textarea.style.display = 'none';
+                        if (self._opts.brTag == 'p') {
+                            self.execCommand("insertBrOnReturn", 'false');
+                        } else {
+                            //如果insertBrOnReturn的执行结果为false，则需要手动绑定换行的keydown标签，插入br来统一换行
+                            if (!self.execCommand("insertBrOnReturn", 'true')) {
+                                self._bindEnter = true;
+                            }
+                        }
+                        var defaultContent = self._opts.textarea.value;
+                        defaultContent ? self.setContent(defaultContent) : self.empty();
+                    };
+                    self._console('function begin', '_steup()');
+                    _steup();
+                    var _bind = function() {
+                        self.bindKeyDown();
+                        var ifrWinOrEditor = self._opts.editorType == 'div' ? self.editor : self.ifrWin;
+                        var doc = self._opts.editorType == 'div' ? document : self.ifrDoc;
+                        Utils.bind(ifrWinOrEditor,'focus',function(){
+                            console.log('focus')
+                            self.isFocus = true;
+                        });
+                        Utils.bind(ifrWinOrEditor,'blur',function(){
+                            console.log('blur')
+                            self.isFocus = false;
+                        })
+                        self.focus = function() {
+                            ifrWinOrEditor.focus();
+                            return self;
+                        }
+                        self.blur = function() {
+                            ifrWinOrEditor.blur();
+                            return self;
+                        }
+
+                        //反之当选区更改的时候保存range
+                        self._console('bind selectionchange');
+                        if ('onselectionchange' in doc) {
+                            Utils.bind(doc, 'selectionchange', function() {
+                                self.onselectionchange();
+                            });
+                        } else {
+                            Utils.bind(doc, 'mouseup', function() {
+                                self.onselectionchange();
+                            });
+                            Utils.bind(doc, 'keyup', function() {
+                                self.onselectionchange();
+                            });
+                        }
+                        //绑定execCommand编辑
+                        var select = self.editorTool.getElementsByTagName('div');
+                        var selectNode = {}
+                        var filter = function(){
+                            var i =0;
+                            while(select[i]){
+                                selectNode[select[i].getAttribute('data-type')] = select[i];
+                                i++;
+                            }
+                        }
+                        filter();
+                        Utils.bind(self.editorTool, 'click', function(e) {
+                            var target = e.srcElement || e.target;
+                            if (target.getAttribute('data-command')) {
+                                self.execCommand(target.getAttribute('data-command'), target.getAttribute('data-command-value') || true);
+                                if(target.parentNode.getAttribute('data-type')){
+                                    target.parentNode.style.display = 'none'
+                                }
+                            }else if(target.getAttribute('data-type') == 'select'){
+                                var select = selectNode[target.getAttribute('data-key')];
+                                select.style.display = select.style.display != 'block' ? 'block' : 'none';
+                            }
+                            return false;
+                        })
+                        //ie绑定获取书签，设置书签方法
+                        if ('onbeforedeactivate' in ifrWinOrEditor && document.selection && doc.selection.getBookmark) {
+                            var ieRangeBookMark;
+                            ifrWinOrEditor.attachEvent('onbeforedeactivate', function() {
+                                doc.selection.getBookmark();
+                            });
+                            ifrWinOrEditor.attachEvent('onactivate', function() {
+                                doc.selection.moveToBookmark(ieRangeBookMark);
+                            });
+                        } else {
+                            self._saveLastRange = true;
+                        }
+                    }
+                    self._console('function begin', '_bind()');
+                    _bind();
+                };
+                _richEditor.prototype = {
+                    queryCommandState : function(){
+                        var tools = this.getTools();
+                        var btns = this.editorTool.childNodes;
+                        var len = btns.length -1;
+                        var defaultCallback = function(result,command){
+                            this.className = result ? 'editor-icon editor-icon-'+ command +' editor-icon-checked' : ('editor-icon editor-icon-'+ command);
+                        }
+                        while(btns[len]){
+                            var command = btns[len].getAttribute('data-key');
+                            if(command && tools[command] && (tools[command]['type'] == 'btn' || tools[command]['queryCallback'])){
+                                var result = this.ifrDoc.queryCommandState(command);
+                                (tools[command]['queryCallback'] ||  defaultCallback).call(btns[len],result,command)
+                            }
+                            len --;
+                        }
+                    //var i = 
+                        //while()
+                    },
+                    selectionchangeTimeId: null,
+                    onselectionchange: function() {
+                        var self = this;
+                        if (self.isFocus) {
+                            
+                            self.selectionchangeTimeId && clearTimeout(self.selectionchangeTimeId);
+                            self.selectionchangeTimeId = setTimeout(function() {
+                                self._saveLastRange && self.saveRange();
+                                self.queryCommandState();
+                            }, 50);
+                        }
+                    },
+                    setLastRange: function() {
+                        if (this.lastRange) {
+                            this.focus();
+                            var rangeData = this.getRange();
+                            var selection = rangeData.selection;
+                            if (selection.removeAllRanges) {
+                                selection.removeAllRanges();
+                                rangeData.selection.addRange(this.lastRange);
+                            }
+                        }
+                    },
+                    saveRange: function() {
+                        var rangeData = this.getRange();
+                        var range = rangeData.range;
+                        if (range) {
+                            this.lastRange = this.getRange().range;
+                        }
+                    },
+                    execCommand: function(type, value) {
+                        var result;
+                        this.setLastRange();
+                        try {
+                            //当ie调用无法执行的命令会报错
+                            result = this.ifrDoc.execCommand(type, false, value);
+                        } catch (e) {
+                        }
+                        this._console('execCommand', type, value, 'result:' + (result ? 'ok' : 'false'));
+                        return result;
+                    },
+                    insertHTML: function(html, fn) {
+                        var self = this;
+                        if (!self.execCommand("insertHTML", html)) {
+                            //ie不支持insertHTML
+                            var rangeData = self.getRange();
+                            var range = rangeData.range;
+                            if (document.selection && range.pasteHTML) {
+                                range.pasteHTML(html);//早期ie的方法
+                                range.collapse(false);
+                            } else {
+                                range.deleteContents();//删除选择的内容.
+                                //#bug  ie9去除了pasteHTML,却没有createContextualFragment方法，ie10已添加
+                                var rangeNode;
+                                if (range.createContextualFragment) {
+                                    rangeNode = range.createContextualFragment(html)
+                                } else {
+                                    rangeNode = document.createDocumentFragment();
+                                    var div = document.createElement("div");
+                                    rangeNode.appendChild(div);
+                                    div.outerHTML = html;
+                                    div = null;
+                                }
+                                range.insertNode(rangeNode);
+                                range.collapse(false);
+                            }
+
+                        }
+                    },
+                    bindKeyDown: function() {
+                        var self = this;
+                        Utils.bind(this._opts.editorType == 'div' ? this.editor : this.ifrDoc.body, 'keydown', function(e) {
+                            e = e || window.event;
+                            if (e.keyCode == 9) {
+                                e.preventDefault ? e.preventDefault() : e.returnValue = false;
+                                self.insertHTML('&nbsp;&nbsp;&nbsp;&nbsp;');
+                            }
+                            if (e.keyCode == 13 && self._bindEnter == true) {
+                                e.preventDefault ? e.preventDefault() : e.returnValue = false;
+                                //如果insertHTML命令失败，手动添加br
+                                var range = self.getRange().range;
+                                self.insertHTML(range.pasteHTML ? '<br/>' : '<br/>&nbsp;');//不添加空格，在末尾无法有时候无法执行br
+                                if (!range.pasteHTML) {
+                                    //chrome\ie9\ie19
+                                    var rangeData = self.getRange();
+                                    var range = rangeData.range;
+                                    range.setStart(range.startContainer, range.startOffset - 1);
+                                    var _selection = self.getRange().selection;
+                                    _selection.removeAllRanges();
+                                    _selection.addRange(range);
+                                    document.execCommand("Delete", false, null);
+                                }
+                            }
+                        });
+                    },
+                    empty: function() {
+                        this.setContent(this._opts.brTag == 'p' ? '<p><br/></p>' : '<br/>')
+                    },
+                    setContent: function(html) {
+                        if (this._opts.editorType == 'div') {
+                            this.editor.innerHTML = html;
+                        } else {
+                            this.ifrDoc.body.innerHTML = html;
+                        }
+                    },
+                    getRange: function() {
+                        var window = this.ifrWin;
+                        var document = this.ifrDoc;
+                        var selection = window.getSelection ? window.getSelection() : document.selection,
+                                range,
+                                node,
+                                text = '';
+                        try {
+                            range = selection.createRange ? selection.createRange() : selection.getRangeAt(0);
+                            text = range.text || range.toString();
+                            if (range.commonAncestorContainer) {
+                                node = range.commonAncestorContainer;
+                            } else {
+                                if (range.parentElement)
+                                    node = range.parentElement();
+                            }
+                        }
+                        catch (e) {
+                        }
+
+                        //如果是div编辑器，要判断range是否在编辑器中
+//                        if (this.editor != node || this.ifrDoc == node) {
+//                            var isChild;
+//                            if (this.editor.contains) {
+//                                isChild = this.editor.contains(node);
+//                            } else {
+//                                isChild = this.editor.compareDocumentPosition(node) == 20;
+//                            }
+//                            if (!isChild) {
+//                                range = text = selection = null;
+//                            }
+//                        }
+                        return {
+                            range: range,
+                            text: text,
+                            selection: selection,
+                            node: node
+                        }
+                    },
+                    render: function() {
+
+                    },
+                    //range in editor
+                    rangeInEditor: function(node) {
+                        if (this.editor.contains) {
+                            return this.editor.contains(node);
+                        } else {
+                            return this.editor.compareDocumentPosition(node) == 20;
+                        }
+                    }
+                }
+                return _richEditor;
+            })(window);
+
+            var editor1 = new mEditor({
+                textarea: document.getElementById('J_textarea1'),
+                brTag: 'br',
+                debug: true,
+                className: ''
+            });
+
+            var editor2 = new mEditor({
+                textarea: document.getElementById('J_textarea2'),
+                editorType: 'iframe',
+                brTag: 'p',
+                debug: true,
+                className: ''
+            });
+        </script>
+    </body>
+</html>
